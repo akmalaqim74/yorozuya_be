@@ -14,16 +14,22 @@ export const SLOT_DEFINITIONS: SlotDef[] = [
   { index: 3, label: "Night", window: "9–12p", startHour: 21, endHour: 24, closesDescription: "closes at 12:00 AM" },
 ];
 
-export const VALID_LOOKS = ["Sepia", "Silver", "Kodachrome", "Bleach"] as const;
+export const VALID_LOOKS = ["Natural", "Sepia", "Silver", "Kodachrome", "Bleach", "Noir", "Polaroid"] as const;
 export type ValidLook = (typeof VALID_LOOKS)[number];
 
-export const VALID_PAPERS = ["Blush", "Butter", "Mint", "Classic"] as const;
+export const VALID_PAPERS = ["Blush", "Butter", "Mint", "Classic", "Lilac", "Ocean"] as const;
 export type ValidPaper = (typeof VALID_PAPERS)[number];
 
-export const VALID_STICKER_SETS = ["Love", "Cosmos", "Garden", "Mixed"] as const;
+export const VALID_STICKER_SETS = ["Love", "Cosmos", "Garden", "Mixed", "Retro", "Weather"] as const;
 export type ValidStickerSet = (typeof VALID_STICKER_SETS)[number];
 
 export const LOOKS_METADATA: Record<ValidLook, { iso: string; blurb: string; filter: string; sw: string }> = {
+  Natural: {
+    iso: "RAW",
+    blurb: "true colour, no grade",
+    filter: "none",
+    sw: "linear-gradient(135deg,#F3F0EA,#C9C2B4 55%,#8A8172)",
+  },
   Sepia: {
     iso: "ISO 200",
     blurb: "warm brown, soft shoulder",
@@ -47,6 +53,18 @@ export const LOOKS_METADATA: Record<ValidLook, { iso: string; blurb: string; fil
     blurb: "blown highlights, grainy",
     filter: "sepia(.2) contrast(1.28) brightness(1.12) saturate(.7)",
     sw: "linear-gradient(135deg,#FBF3E4,#D8C7AC 55%,#8C8172)",
+  },
+  Noir: {
+    iso: "ISO 1600",
+    blurb: "hard contrast, deep black",
+    filter: "grayscale(1) contrast(1.35) brightness(.92)",
+    sw: "linear-gradient(135deg,#D8D8D8,#4A4A4A 55%,#0A0A0A)",
+  },
+  Polaroid: {
+    iso: "ISO 100",
+    blurb: "warm fade, soft whites",
+    filter: "sepia(.18) contrast(.92) brightness(1.1) saturate(1.05)",
+    sw: "linear-gradient(135deg,#F5E9D6,#D9B98A 55%,#A9825A)",
   },
 };
 
@@ -86,6 +104,22 @@ export const PAPERS_METADATA: Record<
     motif: "· · · · · · · · · · · · · ·",
     label: "cream · velvet",
   },
+  Lilac: {
+    paper: "#EAE1F5",
+    ink: "#3E2A5A",
+    accent: "#8B6DC2",
+    backdrop: "radial-gradient(120% 90% at 50% 0%,#C7AEE8,#8C6BB8 60%,#4A3468)",
+    motif: "✧ ✧ ✧ ✧ ✧ ✧ ✧ ✧ ✧ ✧ ✧ ✧",
+    label: "lilac · stars",
+  },
+  Ocean: {
+    paper: "#DCEEF2",
+    ink: "#153A45",
+    accent: "#3E8FA8",
+    backdrop: "radial-gradient(120% 90% at 50% 0%,#8FCBDB,#3E7F94 60%,#1C4550)",
+    motif: "≈ ≈ ≈ ≈ ≈ ≈ ≈ ≈ ≈ ≈ ≈ ≈",
+    label: "ocean · waves",
+  },
 };
 
 export const STICKERS_METADATA: Record<ValidStickerSet, string[]> = {
@@ -93,4 +127,6 @@ export const STICKERS_METADATA: Record<ValidStickerSet, string[]> = {
   Cosmos: ["☾", "★", "✦", "✧"],
   Garden: ["✿", "❀", "✾", "❈"],
   Mixed: ["♥", "☾", "✿", "✦"],
+  Retro: ["☆", "✩", "✫", "✬"],
+  Weather: ["☀", "☁", "☂", "❄"],
 };

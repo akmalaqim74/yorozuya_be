@@ -49,6 +49,7 @@ export const getMonthOverview = async (
     let isKeptForZine = false;
     let rollId: string | null = null;
     let rollNumber: number | null = null;
+    let thumbnailUrl: string | null = null;
 
     if (roll) {
       rollId = roll.id;
@@ -56,6 +57,18 @@ export const getMonthOverview = async (
       look = roll.look as ValidLook;
       isKeptForZine = roll.is_kept_for_zine;
       completedCount = roll.exposures.filter((e) => e.status === "completed").length;
+
+      // A representative photo for the day's tile -- earliest slot with any
+      // photo at all, preferring seat A (matches "seat A always shown
+      // first/left" everywhere else), falling back to seat B if that's all
+      // there is yet.
+      const sortedExposures = [...roll.exposures].sort((a, b) => a.slot_index - b.slot_index);
+      for (const exp of sortedExposures) {
+        if (exp.user_a_photo_url || exp.user_b_photo_url) {
+          thumbnailUrl = exp.user_a_photo_url || exp.user_b_photo_url;
+          break;
+        }
+      }
 
       if (completedCount === 4 || roll.is_dispensed) {
         status = "complete";
@@ -81,6 +94,7 @@ export const getMonthOverview = async (
       completed_frames_count: completedCount,
       look,
       is_kept_for_zine: isKeptForZine,
+      thumbnail_url: thumbnailUrl,
     });
   }
 

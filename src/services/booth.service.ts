@@ -96,7 +96,9 @@ export const getTodayState = async (userId: string): Promise<TodayRollState> => 
     ? `${partnerProfile ? partnerProfile.display_name : "Partner"} is already in their seat`
     : nextUnshotSlot.closes_in;
 
-  const canCustomizeTheme = !roll.first_shot_user_id || roll.first_shot_user_id === userId;
+  // Either partner can restyle the roll at any point in the day now -- it's
+  // no longer locked to whoever shot first.
+  const canCustomizeTheme = true;
 
   return {
     roll_id: roll.id,
@@ -127,13 +129,15 @@ export const updateRollTheme = async (
   }
 
   const todayDateStr = getFormattedDate();
-  const roll = await rollRepo.findRollByCoupleAndDate(coupleData.couple.id, todayDateStr);
+  let roll = await rollRepo.findRollByCoupleAndDate(coupleData.couple.id, todayDateStr);
   if (!roll) {
-    throwNotFound("Today's roll");
-  }
-
-  if (roll.first_shot_user_id && roll.first_shot_user_id !== userId) {
-    throwBadRequest("Theme is locked by the first person who shot today");
+    const latestRoll = await rollRepo.getLatestRoll(coupleData.couple.id);
+    const nextRollNumber = latestRoll ? latestRoll.roll_number + 1 : 1;
+    roll = await rollRepo.createDailyRoll({
+      couple_id: coupleData.couple.id,
+      roll_date: todayDateStr,
+      roll_number: nextRollNumber,
+    });
   }
 
   if (input.look && !VALID_LOOKS.includes(input.look as ValidLook)) {

@@ -74,6 +74,7 @@ export interface ArchiveDayItem {
   completed_frames_count: number;
   look: ValidLook | null;
   is_kept_for_zine: boolean;
+  thumbnail_url: string | null;
 }
 
 export interface ArchiveMonthOverview {
