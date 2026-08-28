@@ -2,8 +2,8 @@ import * as pairRepo from "../repositories/pair.repository";
 import * as archiveRepo from "../repositories/archive.repository";
 import * as rollRepo from "../repositories/roll.repository";
 import { throwBadRequest, throwNotFound } from "../utils/error.util";
-import { ArchiveDayItem, ArchiveMonthOverview } from "../types/domain.types";
-import { ValidLook } from "../config/constants";
+import { ArchiveDayFrame, ArchiveDayItem, ArchiveMonthOverview } from "../types/domain.types";
+import { SLOT_DEFINITIONS, ValidLook } from "../config/constants";
 import { getDispensedStrip } from "./booth.service";
 
 export const getMonthOverview = async (
@@ -50,6 +50,7 @@ export const getMonthOverview = async (
     let rollId: string | null = null;
     let rollNumber: number | null = null;
     let thumbnailUrl: string | null = null;
+    let frames: ArchiveDayFrame[] = [];
 
     if (roll) {
       rollId = roll.id;
@@ -58,11 +59,17 @@ export const getMonthOverview = async (
       isKeptForZine = roll.is_kept_for_zine;
       completedCount = roll.exposures.filter((e) => e.status === "completed").length;
 
-      // A representative photo for the day's tile -- earliest slot with any
-      // photo at all, preferring seat A (matches "seat A always shown
-      // first/left" everywhere else), falling back to seat B if that's all
-      // there is yet.
       const sortedExposures = [...roll.exposures].sort((a, b) => a.slot_index - b.slot_index);
+
+      // Every slot's pair of photos, so the drawer tile can show the whole
+      // day's strip rather than a single representative frame.
+      frames = sortedExposures.map((exp) => ({
+        slot_index: exp.slot_index,
+        label: SLOT_DEFINITIONS[exp.slot_index]?.label || `Slot ${exp.slot_index}`,
+        user_a_photo_url: exp.user_a_photo_url,
+        user_b_photo_url: exp.user_b_photo_url,
+      }));
+
       for (const exp of sortedExposures) {
         if (exp.user_a_photo_url || exp.user_b_photo_url) {
           thumbnailUrl = exp.user_a_photo_url || exp.user_b_photo_url;
@@ -95,6 +102,7 @@ export const getMonthOverview = async (
       look,
       is_kept_for_zine: isKeptForZine,
       thumbnail_url: thumbnailUrl,
+      frames,
     });
   }
 

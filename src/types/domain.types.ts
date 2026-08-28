@@ -65,6 +65,13 @@ export interface TodayRollState {
   cta_hint: string;
 }
 
+export interface ArchiveDayFrame {
+  slot_index: number;
+  label: string;
+  user_a_photo_url: string | null;
+  user_b_photo_url: string | null;
+}
+
 export interface ArchiveDayItem {
   date: string;
   day_number: number;
@@ -75,6 +82,7 @@ export interface ArchiveDayItem {
   look: ValidLook | null;
   is_kept_for_zine: boolean;
   thumbnail_url: string | null;
+  frames: ArchiveDayFrame[];
 }
 
 export interface ArchiveMonthOverview {
