@@ -45,6 +45,16 @@ export interface ExposureSlotDetail {
   partner_captured_at: string | null;
   is_completed: boolean;
   is_live: boolean;
+  can_shoot_together: boolean;
+}
+
+export interface TogetherInviteState {
+  id: string;
+  slot_index: number;
+  invited_by_user_id: string;
+  is_mine_to_respond: boolean;
+  status: "pending" | "accepted";
+  expires_at: string;
 }
 
 export interface TodayRollState {
@@ -63,6 +73,7 @@ export interface TodayRollState {
   partner_info: PartnerSummary | null;
   cta_label: string;
   cta_hint: string;
+  together_invite: TogetherInviteState | null;
 }
 
 export interface ArchiveDayFrame {
@@ -80,6 +91,8 @@ export interface ArchiveDayItem {
   status: "complete" | "half" | "missed" | "empty";
   completed_frames_count: number;
   look: ValidLook | null;
+  paper: ValidPaper | null;
+  sticker_set: ValidStickerSet | null;
   is_kept_for_zine: boolean;
   thumbnail_url: string | null;
   frames: ArchiveDayFrame[];

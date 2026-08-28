@@ -58,6 +58,17 @@ export interface ExposureRow {
   updated_at: string;
 }
 
+export interface TogetherInviteRow {
+  id: string;
+  roll_id: string;
+  slot_index: number;
+  invited_by_user_id: string;
+  status: "pending" | "accepted";
+  expires_at: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface ZineStripRow {
   id: string;
   couple_id: string;

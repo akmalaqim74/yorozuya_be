@@ -3,7 +3,7 @@ import * as archiveRepo from "../repositories/archive.repository";
 import * as rollRepo from "../repositories/roll.repository";
 import { throwBadRequest, throwNotFound } from "../utils/error.util";
 import { ArchiveDayFrame, ArchiveDayItem, ArchiveMonthOverview } from "../types/domain.types";
-import { SLOT_DEFINITIONS, ValidLook } from "../config/constants";
+import { SLOT_DEFINITIONS, ValidLook, ValidPaper, ValidStickerSet } from "../config/constants";
 import { getDispensedStrip } from "./booth.service";
 
 export const getMonthOverview = async (
@@ -46,6 +46,8 @@ export const getMonthOverview = async (
     let status: "complete" | "half" | "missed" | "empty" = "empty";
     let completedCount = 0;
     let look: ValidLook | null = null;
+    let paper: ValidPaper | null = null;
+    let stickerSet: ValidStickerSet | null = null;
     let isKeptForZine = false;
     let rollId: string | null = null;
     let rollNumber: number | null = null;
@@ -56,6 +58,8 @@ export const getMonthOverview = async (
       rollId = roll.id;
       rollNumber = roll.roll_number;
       look = roll.look as ValidLook;
+      paper = roll.paper as ValidPaper;
+      stickerSet = roll.sticker_set as ValidStickerSet;
       isKeptForZine = roll.is_kept_for_zine;
       completedCount = roll.exposures.filter((e) => e.status === "completed").length;
 
@@ -100,6 +104,8 @@ export const getMonthOverview = async (
       status,
       completed_frames_count: completedCount,
       look,
+      paper,
+      sticker_set: stickerSet,
       is_kept_for_zine: isKeptForZine,
       thumbnail_url: thumbnailUrl,
       frames,

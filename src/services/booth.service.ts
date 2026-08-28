@@ -2,10 +2,11 @@ import * as pairRepo from "../repositories/pair.repository";
 import * as rollRepo from "../repositories/roll.repository";
 import * as exposureRepo from "../repositories/exposure.repository";
 import * as storageRepo from "../repositories/storage.repository";
+import * as togetherRepo from "../repositories/together.repository";
 import { SLOT_DEFINITIONS, ValidLook, ValidPaper, ValidStickerSet, VALID_LOOKS, VALID_PAPERS, VALID_STICKER_SETS } from "../config/constants";
 import { getActiveSlotInfo, getFormattedDate, getTimezoneOffsetHours } from "../utils/date.util";
 import { throwBadRequest, throwNotFound } from "../utils/error.util";
-import { ExposureSlotDetail, PartnerSummary, TodayRollState } from "../types/domain.types";
+import { ExposureSlotDetail, PartnerSummary, TodayRollState, TogetherInviteState } from "../types/domain.types";
 
 export const getTodayState = async (userId: string): Promise<TodayRollState> => {
   const coupleData = await pairRepo.findActiveCoupleByUserId(userId);
@@ -67,8 +68,23 @@ export const getTodayState = async (userId: string): Promise<TodayRollState> => 
       partner_captured_at: partnerCapturedAt,
       is_completed: isCompleted,
       is_live: !hasMyPhoto && (hasPartnerPhoto || def.index === activeSlot.index),
+      // Only offered while the slot is fully untouched -- once either side
+      // has a solo photo in, "shoot together" no longer makes sense for it.
+      can_shoot_together: Boolean(userB) && (exp ? exp.status === "empty" : true),
     };
   });
+
+  const activeInvite = await togetherRepo.findActiveInviteForRoll(roll.id);
+  const togetherInvite: TogetherInviteState | null = activeInvite
+    ? {
+        id: activeInvite.id,
+        slot_index: activeInvite.slot_index,
+        invited_by_user_id: activeInvite.invited_by_user_id,
+        is_mine_to_respond: activeInvite.invited_by_user_id !== userId,
+        status: activeInvite.status,
+        expires_at: activeInvite.expires_at,
+      }
+    : null;
 
   // Partner summary
   let partnerSummary: PartnerSummary | null = null;
@@ -116,6 +132,7 @@ export const getTodayState = async (userId: string): Promise<TodayRollState> => 
     partner_info: partnerSummary,
     cta_label: ctaLabel,
     cta_hint: ctaHint,
+    together_invite: togetherInvite,
   };
 };
 

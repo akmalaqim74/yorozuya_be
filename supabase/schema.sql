@@ -104,6 +104,27 @@ CREATE TABLE IF NOT EXISTS public.exposures (
 CREATE INDEX IF NOT EXISTS idx_exposures_roll_id ON public.exposures(roll_id);
 
 -- ----------------------------------------------------------------------------
+-- 5b. TOGETHER INVITES TABLE
+-- "Shoot together" hand-off: one partner invites the other to fill an empty
+-- slot from a single shared photo instead of two separate solo exposures.
+-- Only one active invite per (roll, slot); declines/cancels just delete the
+-- row rather than keeping a history, since neither side of the app needs it.
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS public.together_invites (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    roll_id UUID NOT NULL REFERENCES public.daily_rolls(id) ON DELETE CASCADE,
+    slot_index SMALLINT NOT NULL CHECK (slot_index BETWEEN 0 AND 3),
+    invited_by_user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+    status VARCHAR(20) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'accepted')),
+    expires_at TIMESTAMPTZ NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    CONSTRAINT uq_together_invite_roll_slot UNIQUE (roll_id, slot_index)
+);
+
+CREATE INDEX IF NOT EXISTS idx_together_invites_roll_id ON public.together_invites(roll_id);
+
+-- ----------------------------------------------------------------------------
 -- 6. ZINE STRIPS TABLE
 -- Strips favorited / kept for the physical/digital zine drawer.
 -- ----------------------------------------------------------------------------
@@ -145,6 +166,11 @@ FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
 DROP TRIGGER IF EXISTS trg_exposures_updated_at ON public.exposures;
 CREATE TRIGGER trg_exposures_updated_at
 BEFORE UPDATE ON public.exposures
+FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
+
+DROP TRIGGER IF EXISTS trg_together_invites_updated_at ON public.together_invites;
+CREATE TRIGGER trg_together_invites_updated_at
+BEFORE UPDATE ON public.together_invites
 FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
 
 -- ----------------------------------------------------------------------------
