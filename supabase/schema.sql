@@ -7,6 +7,22 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- ----------------------------------------------------------------------------
+-- 0. APP CONFIG TABLE
+-- Runtime feature toggles that don't warrant a code deploy to flip -- just
+-- update the `value` column directly in the Supabase table editor.
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS public.app_config (
+    key VARCHAR(100) PRIMARY KEY,
+    value BOOLEAN NOT NULL DEFAULT false,
+    description TEXT,
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+INSERT INTO public.app_config (key, value, description) VALUES
+    ('enforce_slot_deadline', true, 'When true, an exposure (solo or shoot-together) can no longer be uploaded once that slot''s time window has closed for the uploading user''s timezone.')
+ON CONFLICT (key) DO NOTHING;
+
+-- ----------------------------------------------------------------------------
 -- 1. PROFILES TABLE
 -- ----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.profiles (
@@ -147,6 +163,11 @@ BEGIN
     RETURN NEW;
 END;
 $$ language 'plpgsql';
+
+DROP TRIGGER IF EXISTS trg_app_config_updated_at ON public.app_config;
+CREATE TRIGGER trg_app_config_updated_at
+BEFORE UPDATE ON public.app_config
+FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
 
 DROP TRIGGER IF EXISTS trg_profiles_updated_at ON public.profiles;
 CREATE TRIGGER trg_profiles_updated_at

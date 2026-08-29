@@ -3,8 +3,9 @@ import * as rollRepo from "../repositories/roll.repository";
 import * as exposureRepo from "../repositories/exposure.repository";
 import * as storageRepo from "../repositories/storage.repository";
 import * as togetherRepo from "../repositories/together.repository";
+import * as configRepo from "../repositories/config.repository";
 import { SLOT_DEFINITIONS, ValidLook, ValidPaper, ValidStickerSet, VALID_LOOKS, VALID_PAPERS, VALID_STICKER_SETS } from "../config/constants";
-import { getActiveSlotInfo, getFormattedDate, getTimezoneOffsetHours } from "../utils/date.util";
+import { getActiveSlotInfo, getFormattedDate, getTimezoneOffsetHours, hasSlotWindowClosed } from "../utils/date.util";
 import { throwBadRequest, throwNotFound } from "../utils/error.util";
 import { ExposureSlotDetail, PartnerSummary, TodayRollState, TogetherInviteState } from "../types/domain.types";
 
@@ -195,9 +196,15 @@ export const shootExposure = async (
     throwBadRequest("Not in an active couple", "NOT_PAIRED");
   }
 
-  const { couple, userA } = coupleData;
+  const { couple, userA, userB } = coupleData;
   const isSeatA = userA.id === userId;
   const seatName = isSeatA ? "seat-a" : "seat-b";
+  const myProfile = isSeatA ? userA : userB;
+
+  const enforceDeadline = await configRepo.getConfigBool("enforce_slot_deadline", true);
+  if (enforceDeadline && hasSlotWindowClosed(slotIndex, myProfile?.timezone || "UTC")) {
+    throwBadRequest(`The ${SLOT_DEFINITIONS[slotIndex]?.label ?? "exposure"} window has already closed for today`, "SLOT_CLOSED");
+  }
 
   const todayDateStr = getFormattedDate();
   let roll = await rollRepo.findRollByCoupleAndDate(couple.id, todayDateStr);

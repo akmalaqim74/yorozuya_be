@@ -67,6 +67,19 @@ export const getActiveSlotInfo = (
 };
 
 /**
+ * Whether a given slot's time window has already closed for today, in the
+ * given timezone. Used to block late uploads once a slot's window has
+ * passed -- Night (21-24h) never trips this within the same calendar day,
+ * since it only ever "closes" by rolling over to the next day's roll.
+ */
+export const hasSlotWindowClosed = (slotIndex: number, timezone = "UTC", date: Date = new Date()): boolean => {
+  const slot = SLOT_DEFINITIONS[slotIndex];
+  if (!slot) return false;
+  const currentHour = getHourInTimezone(timezone, date);
+  return currentHour >= slot.endHour;
+};
+
+/**
  * Calculate timezone offset difference in hours between two timezones.
  * e.g. "Asia/Jakarta" (UTC+7) vs "Europe/Berlin" (UTC+2/1) -> returns +5 or +6
  */

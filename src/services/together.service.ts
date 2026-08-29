@@ -3,7 +3,9 @@ import * as rollRepo from "../repositories/roll.repository";
 import * as exposureRepo from "../repositories/exposure.repository";
 import * as togetherRepo from "../repositories/together.repository";
 import * as storageRepo from "../repositories/storage.repository";
-import { getFormattedDate } from "../utils/date.util";
+import * as configRepo from "../repositories/config.repository";
+import { SLOT_DEFINITIONS } from "../config/constants";
+import { getFormattedDate, hasSlotWindowClosed } from "../utils/date.util";
 import { throwBadRequest, throwNotFound } from "../utils/error.util";
 
 const INVITE_TTL_SECONDS = 90;
@@ -22,6 +24,14 @@ export const sendInvite = async (
   }
   if (!coupleData.userB) {
     throwBadRequest("You need a partner paired before shooting together");
+  }
+
+  const isSeatA = coupleData.userA.id === userId;
+  const myProfile = isSeatA ? coupleData.userA : coupleData.userB;
+
+  const enforceDeadline = await configRepo.getConfigBool("enforce_slot_deadline", true);
+  if (enforceDeadline && hasSlotWindowClosed(slotIndex, myProfile?.timezone || "UTC")) {
+    throwBadRequest(`The ${SLOT_DEFINITIONS[slotIndex]?.label ?? "exposure"} window has already closed for today`, "SLOT_CLOSED");
   }
 
   const todayDateStr = getFormattedDate();
@@ -115,6 +125,14 @@ export const shootTogether = async (
   const coupleData = await pairRepo.findActiveCoupleByUserId(userId);
   if (!coupleData) {
     throwBadRequest("Not in an active couple", "NOT_PAIRED");
+  }
+
+  const isSeatA = coupleData.userA.id === userId;
+  const myProfile = isSeatA ? coupleData.userA : coupleData.userB;
+
+  const enforceDeadline = await configRepo.getConfigBool("enforce_slot_deadline", true);
+  if (enforceDeadline && hasSlotWindowClosed(slotIndex, myProfile?.timezone || "UTC")) {
+    throwBadRequest(`The ${SLOT_DEFINITIONS[slotIndex]?.label ?? "exposure"} window has already closed for today`, "SLOT_CLOSED");
   }
 
   const todayDateStr = getFormattedDate();

@@ -1,3 +1,10 @@
+export interface AppConfigRow {
+  key: string;
+  value: boolean;
+  description: string | null;
+  updated_at: string;
+}
+
 export interface ProfileRow {
   id: string;
   email: string;
