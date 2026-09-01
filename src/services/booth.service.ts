@@ -40,6 +40,7 @@ export const getTodayState = async (userId: string): Promise<TodayRollState> => 
 
   // Active slot based on user timezone
   const { activeSlot } = getActiveSlotInfo(myProfile?.timezone || "UTC");
+  const enforceDeadline = await configRepo.getConfigBool("enforce_slot_deadline", true);
 
   // Exposures -- partner's photo is visible as soon as they upload it, no
   // waiting on your own half of the same slot.
@@ -54,6 +55,10 @@ export const getTodayState = async (userId: string): Promise<TodayRollState> => 
     const hasMyPhoto = Boolean(myPhoto);
     const hasPartnerPhoto = Boolean(partnerPhoto);
     const visiblePartnerPhoto = partnerPhoto;
+    // Missed, not blocked: once this slot's own window has closed without my
+    // photo, it's done for the day -- but that never stops a LATER slot
+    // (e.g. Noon) from still being open and shootable.
+    const isMissed = !hasMyPhoto && enforceDeadline && hasSlotWindowClosed(def.index, myProfile?.timezone || "UTC");
 
     return {
       slot_index: def.index,
@@ -69,9 +74,10 @@ export const getTodayState = async (userId: string): Promise<TodayRollState> => 
       partner_captured_at: partnerCapturedAt,
       is_completed: isCompleted,
       is_live: !hasMyPhoto && (hasPartnerPhoto || def.index === activeSlot.index),
+      is_missed: isMissed,
       // Only offered while the slot is fully untouched -- once either side
       // has a solo photo in, "shoot together" no longer makes sense for it.
-      can_shoot_together: Boolean(userB) && (exp ? exp.status === "empty" : true),
+      can_shoot_together: Boolean(userB) && (exp ? exp.status === "empty" : true) && !isMissed,
     };
   });
 
@@ -101,14 +107,20 @@ export const getTodayState = async (userId: string): Promise<TodayRollState> => 
     };
   }
 
-  // CTA label calculation
-  const nextUnshotSlot = exposureDetails.find((e) => !e.has_my_photo);
-  const allShot = nextUnshotSlot === undefined;
-  const ctaLabel = allShot
+  // CTA label calculation -- skips past any slot that's missed (window
+  // closed, never shot) so a late Morning doesn't strand the whole day;
+  // Noon/Evening/Night are still fair game as long as their own windows
+  // haven't closed too.
+  const nextUnshotSlot = exposureDetails.find((e) => !e.has_my_photo && !e.is_missed);
+  const nothingLeftToShoot = nextUnshotSlot === undefined;
+  const missedCount = exposureDetails.filter((e) => e.is_missed).length;
+  const ctaLabel = nothingLeftToShoot
     ? "View today's strip"
     : `Take the ${nextUnshotSlot.label.toLowerCase()} exposure`;
-  const ctaHint = allShot
-    ? "All four exposures printed"
+  const ctaHint = nothingLeftToShoot
+    ? missedCount > 0
+      ? `${missedCount} exposure${missedCount === 1 ? "" : "s"} missed today`
+      : "All four exposures printed"
     : nextUnshotSlot.has_partner_photo
     ? `${partnerProfile ? partnerProfile.display_name : "Partner"} is already in their seat`
     : nextUnshotSlot.closes_in;

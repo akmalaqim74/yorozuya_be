@@ -45,6 +45,7 @@ export interface ExposureSlotDetail {
   partner_captured_at: string | null;
   is_completed: boolean;
   is_live: boolean;
+  is_missed: boolean;
   can_shoot_together: boolean;
 }
 
